@@ -1,5 +1,6 @@
 import Navbar from '@/components/Navbar'
 import Sidebar from '@/components/Sidebar'
+import StreamVideoProvider from '@/providers/StreamClientProvider'
 import React, { ReactNode } from 'react'
 
 const RootLayout = ({children}: {children: ReactNode}) => {
@@ -17,6 +18,9 @@ const RootLayout = ({children}: {children: ReactNode}) => {
         </div>
        
         Footer
+        {/* <StreamVideoProvider>
+            {children}
+        </StreamVideoProvider> */}
     </main>
   )
 }
