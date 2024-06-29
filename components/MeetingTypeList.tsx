@@ -1,16 +1,70 @@
 'use client'
 import Image from 'next/image'
-import React, { useState } from 'react'
+import React, { use, useState } from 'react'
 import HomeCard from './HomeCard'
 import { useRouter } from 'next/navigation';
 import MeetingModal from './MeetingModal';
+import { useUser } from '@clerk/nextjs';
+import { Call, useStreamVideoClient } from '@stream-io/video-react-sdk';
+import { useToast } from './ui/use-toast';
 
 const MeetingTypeList = () => {
-  const [meetingState, setMeetingState] = useState<'isScheduleMeeting' | 'isJoiningMeeting' | 'isInstantMeeting' | undefined>(undefined);
+  const [meetingState, setMeetingState] = useState<'isScheduleMeeting' | 'isJoiningMeeting' | 'isInstantMeeting' | undefined>();
 
   const router = useRouter();
-  const createMeeting = () => {
-    
+
+  const {user} = useUser();
+  const client = useStreamVideoClient();
+  const [value, setValue] = useState({
+    dateTime: new Date(),
+    description: '',
+    link: ''
+
+  }); 
+  const [callDetails, setCallDetails] = useState<Call>()
+  const { toast } = useToast()
+
+  const createMeeting = async () => {
+      if(!client || !user) {
+        console.log('Client or User not found');
+        return;
+      }
+
+      try{
+        if(!value.dateTime){
+          toast({title: 'Please select a date and time'})
+          return
+        }
+        const id =crypto.randomUUID();
+        const call = client.call('default', id)
+        if(!call) throw new Error('Call not created');
+
+        const startsAt = value.dateTime.toISOString() || new Date(Date.now()).toISOString();
+        const description = value.description || 'Instant Meeting';
+
+        await call.getOrCreate({
+          data: {
+            starts_at: startsAt,
+            custom: {
+              description
+            }
+          }
+        })
+
+        setCallDetails(call);
+        if(!value.description){
+          router.push(`/meeting/${call.id}`)
+        }
+        toast({title: 'Scheduled: Catch up'})
+
+      } catch (error) {
+          console.error(error);
+          toast({
+            title: "Scheduled: Catch up",
+  
+          })
+      
+      }
   }
   return (
     <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
